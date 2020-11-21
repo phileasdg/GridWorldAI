@@ -99,6 +99,7 @@ class Agent:
     def __init__(self, name, env_side_length):
         self.name = name
         self.env_side_length = env_side_length
+        self.personal_utility_bias = 0
         self.utility_map = np  # array of values between 1 and -1.
         self.position = ()
         self.lastposition = ()
@@ -122,6 +123,9 @@ class Agent:
     def set_position(self, posyx):
         self.lastposition = self.position
         self.position = posyx
+
+    def set_personal_utility_bias(self, bias):
+        self.personal_utility_bias = bias
 
     def list_neighbours(self, posyx=None, repeat=0):
         self.last_neighbours = self.all_neighbours
@@ -180,14 +184,15 @@ class Agent:
         plt.title((self.name + ' "Subjective Utility" Map'))
         plt.colorbar()
 
-        # print frame around current AI position
         ax = plt.subplot()
-        ax.add_patch(Rectangle((self.position[1] - 0.5, self.position[0] - 0.5), 1, 1, fill=False, edgecolor='k', lw=4))
 
         # print frame around current goals
         for i in self.goals:
             ax.add_patch(
                 Rectangle((i[1] - 0.5, i[0] - 0.5), 1, 1, fill=False, edgecolor='green', lw=4))
+
+        # print frame around current AI position
+        ax.add_patch(Rectangle((self.position[1] - 0.5, self.position[0] - 0.5), 1, 1, fill=False, edgecolor='k', lw=4))
 
         # print labels on cells if env_side_length < 15
         if self.env_side_length <= 15:
@@ -224,6 +229,7 @@ class Agent:
                       sorted(zip(self.goal_distances, self.goals), key=sort_goal_distances)]
 
     def sort_moves(self):
+        personal_utility_bias = self.personal_utility_bias + 2
         def compare_distances(move, goal):
             # compare current distance to goal with proposed distance to goal
             currentyx = ((self.position[0] - goal[0]), (self.position[1] - goal[1]))
@@ -241,29 +247,29 @@ class Agent:
                         if abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) and abs(proposed_distanceyx[1]) < abs(
                                 current_distanceyx[1]):
                             self.utility_map[k] = round(
-                                self.utility_map[k] + 0.25 / (len(self.goals) + self.goals.index(g)),
+                                self.utility_map[k] + (personal_utility_bias/4) / (len(self.goals) + self.goals.index(g)),
                                 2)
                             self.utility_map[i] = round(
-                                self.utility_map[i] + 0.5 / (len(self.goals) + self.goals.index(g)),
+                                self.utility_map[i] + (personal_utility_bias/2) / (len(self.goals) + self.goals.index(g)),
                                 2)
                         elif abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) or abs(proposed_distanceyx[1]) < abs(
                                 current_distanceyx[1]):
                             self.utility_map[k] = round(
-                                self.utility_map[k] + 0.125 / (len(self.goals) + self.goals.index(g)),
+                                self.utility_map[k] + (personal_utility_bias/8) / (len(self.goals) + self.goals.index(g)),
                                 2)
                             self.utility_map[i] = round(
-                                self.utility_map[i] + 0.25 / (len(self.goals) + self.goals.index(g)),
+                                self.utility_map[i] + (personal_utility_bias/4) / (len(self.goals) + self.goals.index(g)),
                                 2)
                 for j in self.goals:
                     proposed_distanceyx, current_distanceyx = compare_distances(i, j)
                     if abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) and abs(proposed_distanceyx[1]) < abs(
                             current_distanceyx[1]):
                         self.utility_map[i] = round(
-                            self.utility_map[i] + 2 / (len(self.goals) + self.goals.index(j)), 2)
+                            self.utility_map[i] + personal_utility_bias / (len(self.goals) + self.goals.index(j)), 2)
                     elif abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) or abs(proposed_distanceyx[1]) < abs(
                             current_distanceyx[1]):
                         self.utility_map[i] = round(
-                            self.utility_map[i] + 1 / (len(self.goals) + self.goals.index(j)), 2)
+                            self.utility_map[i] + (personal_utility_bias/2) / (len(self.goals) + self.goals.index(j)), 2)
             except IndexError:
                 print("immediate neighbours are beyond the limits of the environment")
 
@@ -284,10 +290,8 @@ class Agent:
             self.list_neighbours(repeat=self.vision_range)
             # needs to update utility map environment with last neighbours list
             self.update_utility_map(environment, self.last_neighbours)
-            print(1, self.utility_map)
             # needs to update utility map environment with current all neighbours list
             self.update_utility_map(environment, self.all_neighbours)
-            print(2, self.utility_map)
             # need to sort goals and moves
             self.sort_goals()
             self.sort_moves()
@@ -297,7 +301,8 @@ class Agent:
             self.move_agent()
 
     def get_started(self, environment, start_position=(0, 0), goals=None, penalties=None, vision_range=0,
-                    print_map=None):
+                    print_map=None, personal_utility_bias=0):
+        self.personal_utility_bias = personal_utility_bias
         self.vision_range = vision_range
         if goals is None:
             goals = []
@@ -311,7 +316,6 @@ class Agent:
         if print_map is True:
             self.print_agent_utility_map()
 
-
 def main():
     moves = 10
     env_side_length = 10
@@ -320,9 +324,9 @@ def main():
     E1.get_started((5, 5))
 
     A1 = Agent("Classic Utilitarian", env_side_length)
-    A1.get_started(E1.grid_environment, E1.agent_start, E1.goals, E1.penalties, vision_range, print_map=True)
+    A1.get_started(E1.grid_environment, E1.agent_start, E1.goals, E1.penalties, vision_range, print_map=True,
+                   personal_utility_bias=0)
     A1.run_agent(E1.grid_environment, moves=moves)
-    # reset utility map here
 
 
 # figure out what the agent does when it has no goals
