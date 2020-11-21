@@ -15,6 +15,7 @@ from matplotlib.patches import Rectangle
 # The environment cells can have values between -1 and 1, where 0 is neutral, -1 is negative, and 1 is positive)
 
 class Environment:
+
     def __init__(self, side_length, decimals=1, empty=None):
         self.side_length = side_length
         self.decimals = decimals
@@ -94,11 +95,6 @@ class Environment:
 
 
 class Agent:
-    # creates a utility map based on
-    # a) goals
-    # b) penalties
-    # c) extra information it gathers
-    # d) implements AI utility function and simulates AI decision making as animation of graphs
 
     def __init__(self, name, env_side_length):
         self.name = name
@@ -188,6 +184,11 @@ class Agent:
         ax = plt.subplot()
         ax.add_patch(Rectangle((self.position[1] - 0.5, self.position[0] - 0.5), 1, 1, fill=False, edgecolor='k', lw=4))
 
+        # print frame around current goals
+        for i in self.goals:
+            ax.add_patch(
+                Rectangle((i[1] - 0.5, i[0] - 0.5), 1, 1, fill=False, edgecolor='green', lw=4))
+
         # print labels on cells if env_side_length < 15
         if self.env_side_length <= 15:
             for i in range(self.env_side_length):
@@ -230,43 +231,49 @@ class Agent:
             return proposedyx, currentyx
 
         for i in self.immediate_neighbours:
-            if self.utility_map[i] < 0:
-                self.utility_map[i] = round(self.utility_map[i] - 1 / 8, 2)
-            self.list_neighbours(i)
-            for k in self.look_ahead_list:
-                for g in self.goals:
-                    proposed_distanceyx, current_distanceyx = compare_distances(k, g)
+            try:
+                if self.utility_map[i] < 0:
+                    self.utility_map[i] = round(self.utility_map[i] - 1 / 8, 2)
+                self.list_neighbours(i)
+                for k in self.look_ahead_list:
+                    for g in self.goals:
+                        proposed_distanceyx, current_distanceyx = compare_distances(k, g)
+                        if abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) and abs(proposed_distanceyx[1]) < abs(
+                                current_distanceyx[1]):
+                            self.utility_map[k] = round(
+                                self.utility_map[k] + 0.25 / (len(self.goals) + self.goals.index(g)),
+                                2)
+                            self.utility_map[i] = round(
+                                self.utility_map[i] + 0.5 / (len(self.goals) + self.goals.index(g)),
+                                2)
+                        elif abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) or abs(proposed_distanceyx[1]) < abs(
+                                current_distanceyx[1]):
+                            self.utility_map[k] = round(
+                                self.utility_map[k] + 0.125 / (len(self.goals) + self.goals.index(g)),
+                                2)
+                            self.utility_map[i] = round(
+                                self.utility_map[i] + 0.25 / (len(self.goals) + self.goals.index(g)),
+                                2)
+                for j in self.goals:
+                    proposed_distanceyx, current_distanceyx = compare_distances(i, j)
                     if abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) and abs(proposed_distanceyx[1]) < abs(
                             current_distanceyx[1]):
-                        self.utility_map[k] = round(
-                            self.utility_map[k] + 0.25 / (len(self.goals) + self.goals.index(g)),
-                            2)
                         self.utility_map[i] = round(
-                            self.utility_map[i] + 0.5 / (len(self.goals) + self.goals.index(g)),
-                            2)
+                            self.utility_map[i] + 2 / (len(self.goals) + self.goals.index(j)), 2)
                     elif abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) or abs(proposed_distanceyx[1]) < abs(
                             current_distanceyx[1]):
-                        self.utility_map[k] = round(
-                            self.utility_map[k] + 0.125 / (len(self.goals) + self.goals.index(g)),
-                            2)
                         self.utility_map[i] = round(
-                            self.utility_map[i] + 0.25 / (len(self.goals) + self.goals.index(g)),
-                            2)
-            for j in self.goals:
-                proposed_distanceyx, current_distanceyx = compare_distances(i, j)
-                if abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) and abs(proposed_distanceyx[1]) < abs(
-                        current_distanceyx[1]):
-                    self.utility_map[i] = round(
-                        self.utility_map[i] + 2 / (len(self.goals) + self.goals.index(j)), 2)
-                elif abs(proposed_distanceyx[0]) < abs(current_distanceyx[0]) or abs(proposed_distanceyx[1]) < abs(
-                        current_distanceyx[1]):
-                    self.utility_map[i] = round(
-                        self.utility_map[i] + 1 / (len(self.goals) + self.goals.index(j)), 2)
+                            self.utility_map[i] + 1 / (len(self.goals) + self.goals.index(j)), 2)
+            except IndexError:
+                print("immediate neighbours are beyond the limits of the environment")
 
     def move_agent(self, posyx=None):  # , utility_map=self.utility_map):
         utility_list = []
         for i in self.immediate_neighbours:
-            utility_list.append(self.utility_map[i])
+            try:
+                utility_list.append(self.utility_map[i])
+            except IndexError:
+                print("can't append utility for immediate neighbours beyond environment edge")
         if posyx is None:
             posyx = self.immediate_neighbours[utility_list.index(max(utility_list))]
         self.set_position(posyx)
