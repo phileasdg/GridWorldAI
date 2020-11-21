@@ -19,3 +19,4 @@ ani = animation.FuncAnimation(
     fig, animate, step, interval=100, repeat=True, fargs=(im, ))
 # plt.show()
 ani.save("sine_wave.gif", writer='pillow')
+print("finished")
