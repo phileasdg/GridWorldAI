@@ -1,8 +1,13 @@
+import PIL
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+import matplotlib.animation as animation
+import os
 
+# figure out what the agent does when it has no goals
+# the agent gets confused and doesn't move
 
 # the Agent has an environment to navigate, with goal(s) in the environment,
 # everywhere it goes, it changes the environment, and this can either be a neutral action (the
@@ -20,7 +25,7 @@ class Environment:
         self.side_length = side_length
         self.decimals = decimals
         if empty is True:
-            self.grid = np.zeros((side_length, side_length))  # empty grid
+            self.grid_environment = np.zeros((side_length, side_length))  # empty grid
         else:
             # Environment grid: array of height == width == side_length; random values b/w -1 and 1, decimals = decimals.
             self.grid_environment = np.around(np.random.uniform(-0.5, 0.5, (side_length, side_length)),
@@ -31,7 +36,7 @@ class Environment:
         self.agent_start = ()
 
     def assign_grid_position_value(self, posyx: tuple, value: int):
-        self.grid[posyx] = value
+        self.grid_environment[posyx] = value
 
     def assign_goals(self, n_goals):
         for i in range(n_goals):
@@ -62,7 +67,7 @@ class Environment:
         print("\n Environment side length = ", self.side_length, "\n Environment array: \n", self.grid_environment,
               "\n")
 
-    def print_env_utility_map(self):
+    def print_env_utility_map(self, save=None):
         plt.imshow(self.grid_environment, cmap='RdYlGn', interpolation='nearest')
         plt.title('Environment "True Utility" Map')
         plt.colorbar()
@@ -72,7 +77,12 @@ class Environment:
             for i in range(self.side_length):
                 for j in range(self.side_length):
                     plt.text(j, i, self.grid_environment[i, j], ha="center", va="center", color="k")
-        plt.show()
+
+        if save is True:
+            plt.savefig('environment.png')
+            plt.show()
+        else:
+            plt.show()
 
     def assign_agent_start(self, startyx=(0, 0)):
         self.agent_start = [startyx[0], startyx[1]]
@@ -81,7 +91,7 @@ class Environment:
     def print_agent_start(self):
         print("Agent start:", self.agent_start)
 
-    def get_started(self, agentyx=None):
+    def get_started(self, agentyx=None, save=None):
         self.assign_goals(int(input("How many goals should the agent have? ")))
         self.assign_penalties(int(input("How many penalties should the environment contain? ")))
         if agentyx is None:
@@ -91,7 +101,7 @@ class Environment:
             self.assign_agent_start(agentyx)
         self.print_goals_and_penalties()
         self.print_agent_start()
-        self.print_env_utility_map()
+        self.print_env_utility_map(save=save)
 
 
 class Agent:
@@ -170,7 +180,6 @@ class Agent:
                 self.utility_map[self.goals[i]] = 1
             for j in range(len(self.penalties)):
                 self.utility_map[self.penalties[j]] = -1
-            self.utility_map[(self.position[0], self.position[1])] = 0
         for i in data_positions:
             if i not in self.finished_goals:
                 # if the data position is not a goal:
@@ -178,8 +187,9 @@ class Agent:
                     self.utility_map[i] = source_map[i]
                 except IndexError:
                     print("vision scope has reached environment edges")
+        self.utility_map[(self.position[0], self.position[1])] = 0
 
-    def print_agent_utility_map(self):
+    def print_agent_utility_map(self, save=None, step=None):
         plt.imshow(self.utility_map, cmap='RdYlGn', interpolation='nearest')
         plt.title((self.name + ' "Subjective Utility" Map'))
         plt.colorbar()
@@ -200,7 +210,11 @@ class Agent:
                 for j in range(self.env_side_length):
                     plt.text(j, i, self.utility_map[i, j], ha="center", va="center", color="k")
 
-        plt.show()
+        if save is True:
+            plt.savefig("Agent"+str(step)+".png")
+            plt.show()
+        else:
+            plt.show()
 
     def sort_goals(self):  # sorts agent goals
         for q in self.goals:
@@ -297,7 +311,7 @@ class Agent:
             self.sort_moves()
             # update utility map should not be called here because it will overwrite the output of sort_moves
             self.list_neighbours(repeat=self.vision_range)
-            self.print_agent_utility_map()
+            self.print_agent_utility_map(save=True, step=i+1)
             self.move_agent()
 
     def get_started(self, environment, start_position=(0, 0), goals=None, penalties=None, vision_range=0,
@@ -314,26 +328,36 @@ class Agent:
         self.list_neighbours(repeat=self.vision_range)
         self.update_utility_map(environment, self.all_neighbours, first_run=True)
         if print_map is True:
-            self.print_agent_utility_map()
+            self.print_agent_utility_map(save=True, step=0)
 
 def main():
-    moves = 10
-    env_side_length = 10
+    personal_utility_bias = 0
+    moves = 25
+    env_side_length = 15
     vision_range = 2
-    E1 = Environment(env_side_length)  # creates an environment
-    E1.get_started((5, 5))
+    E1 = Environment(env_side_length, empty=None)  # creates an environment
+    E1.get_started((0, 0), save=True)
 
     A1 = Agent("Classic Utilitarian", env_side_length)
     A1.get_started(E1.grid_environment, E1.agent_start, E1.goals, E1.penalties, vision_range, print_map=True,
-                   personal_utility_bias=0)
+                   personal_utility_bias=personal_utility_bias)
     A1.run_agent(E1.grid_environment, moves=moves)
-
-
-# figure out what the agent does when it has no goals
-# the agent's goals need to yield higher utility than the other immediate neighbours.
-# the agent gets confused and doesn't move
-# when the agent gets near the environment boundaries, it returns an error because it is trying to calculate
-# utility for something that does not exist
 
 if __name__ == '__main__':
     main()
+
+    # def save_run_animation(agent, environment):
+    #     def animate(data, im):
+    #         im.set_data(data)
+    #
+    #     def step():
+    #         while True:
+    #             data = agent.utility_map
+    #             yield data
+    #
+    #     fig, ax = plt.subplots()
+    #     ax.add_patch(Rectangle((1 - 0.5, 5 - 0.5), 1, 1, fill=False, edgecolor='k', lw=4))
+    #     im = ax.imshow(environment.grid_environment, interpolation='nearest')
+    #     ani = animation.FuncAnimation(fig, animate, step, interval=100, repeat=True, fargs=(im,))
+    #     ani.save("sine_wave.gif", writer='pillow')
+    #     print("finished")
