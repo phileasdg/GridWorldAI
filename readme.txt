@@ -1,4 +1,4 @@
-This program is designed to facilitate AI agent testing in grid world environments. The program's functionality
+# This program is designed to facilitate AI agent testing in grid world environments. The program's functionality
 includes the following:
 - generating AI grid worlds at any scale.
 - providing a framework to create and implement AI agents to interact in these grid world environments.
@@ -6,7 +6,7 @@ includes the following:
 - an example of AI agent implemented to interact with these grid worlds, with adjustable personal utility bias, utility
 function, look ahear search, and start position.
 
-HOW TO USE THIS PROGRAM
+# HOW TO USE THIS PROGRAM
 1) by editing this master program and adding your own AI implementation
 - create an environment object from the environment class and specify its size and whether it should be empty.
 - run the environment object's get started method - optional: specify in attributes the agent start position and whether
