@@ -6,7 +6,7 @@ includes the following:
 - an example of AI agent implemented to interact with these grid worlds, with adjustable personal utility bias, utility
 function, look ahear search, and start position.
 
-# HOW TO USE THIS PROGRAM
+# How to use this program:
 1) by editing this master program and adding your own AI implementation
 - create an environment object from the environment class and specify its size and whether it should be empty.
 - run the environment object's get started method - optional: specify in attributes the agent start position and whether
@@ -22,7 +22,7 @@ to save the gridworld plots as png files
 environment grid world.
 - run the agent and study the results!
 
-DESCRIPTION
+# Description:
 The Agent has an environment to navigate which contains goals and penalties. Every turn, it moves, and everywhere it
 goes, it changes the environment. Every move is associated with a utility value which can be positive or negative.
 Thus, an action can either be neutral (the environment is not disturbed by the action of the AI), a positive action
