@@ -6,6 +6,8 @@ includes the following:
 - an example of AI agent implemented to interact with these grid worlds, with adjustable personal utility bias, utility
 function, look ahear search, and start position.
 
+![simulation example](https://raw.githubusercontent.com/phileasdg/GridWorldAI/main/simulation2.gif)
+
 # How to use this program:
 1) by editing this master program and adding your own AI implementation
 - create an environment object from the environment class and specify its size and whether it should be empty.
