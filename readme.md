@@ -1,5 +1,6 @@
-# This program is designed to facilitate AI agent testing in grid world environments. The program's functionality
-includes the following:
+# This program is designed to facilitate AI agent testing in grid world environments. 
+
+The program's functionality includes the following:
 - generating AI grid worlds at any scale.
 - providing a framework to create and implement AI agents to interact in these grid world environments.
 - providing a framework to visualise AI-environment interactions with data export capabilities.
